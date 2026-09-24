@@ -1,3 +1,6 @@
 FROM tomcat:latest
-COPY ./webapp.war /usr/local/tomcat/webapps
-RUN cp -r /usr/local/tomcat/webapps.dist/* /usr/local/tomcat/webapps
+WORKDIR /app
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+COPY webapp ./webapp
+RUN mvn clean package -DskipTests
