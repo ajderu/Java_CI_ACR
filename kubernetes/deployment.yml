@@ -1,0 +1,54 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: adrianj-go
+  namespace: adrianj-go 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: adrianj-go
+  template:
+    metadata:
+      labels:
+        app: adrianj-go
+      namespace: adrianj-go 
+    spec:
+      containers:
+        - name: adrianj-go
+          image: volpayacr.azurecr.io/adrianj-go:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+          - name: KAFKA_ENDPOINT
+            value: "http://volpaykafka.westeurope.cloudapp.azure.com:9021/clusters"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts: 
+            - name: config-volume
+              mountPath: /var/run/docker.sock
+      imagePullSecrets:
+        - name: adrianj-go
+      volumes:
+        - name: config-volume
+          hostPath:
+            path: /var/run/docker.sock
+          
