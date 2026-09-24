@@ -16,9 +16,9 @@ permissions:
 
 env:
   PASSPORT_API: https://func-releaseguard-e2a10c.azurewebsites.net
-  PASSPORT_PROJECT: prj_ba5272f61a0c
+  PASSPORT_PROJECT: prj_8335cea01c67
   PASSPORT_AUDIENCE: release-passport
-  PASSPORT_CLI_URL: https://lemon-moss-0e2f7d103.3.azurestaticapps.net/cli/passport.py
+  PASSPORT_CLI_URL: https://proud-meadow-00747b303.6.azurestaticapps.net/cli/passport.py
   TRIVY_IMAGE: aquasec/trivy:0.58.1   # pin, and bump deliberately
 
 jobs:
