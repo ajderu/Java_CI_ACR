@@ -90,7 +90,10 @@ jobs:
         if: env.PASSPORT_STAGE_SAST == '1'
         continue-on-error: true
         run: |
-          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/src" -w /src \
+          mkdir -p "$RUNNER_TEMP/semgrep-home"
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$PWD:/src" -v "$RUNNER_TEMP/semgrep-home:/sghome" -w /src \
+            -e HOME=/sghome -e SEMGREP_SETTINGS_FILE=/sghome/settings.yml \
             semgrep/semgrep:1.97.0 semgrep scan --config p/ci --json --output semgrep.json --quiet --metrics=off
 
       - name: Request release passport
