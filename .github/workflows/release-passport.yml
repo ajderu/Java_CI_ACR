@@ -56,15 +56,28 @@ jobs:
         id: ref
         run: echo "image=$IMAGE@${{ steps.build.outputs.digest }}" >> "$GITHUB_OUTPUT"
 
-      - name: Image security and dependencies (Trivy)
+      # Image security is always scanned: that report is what binds the passport to the digest.
+      - name: Image security (Trivy, operating-system packages)
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
           docker run --rm --user "$(id -u):$(id -g)" -e TRIVY_USERNAME -e TRIVY_PASSWORD \
             -v "$PWD:/work" -w /work "$TRIVY_IMAGE" image \
-            --cache-dir /work/.trivycache --scanners vuln --format json --output trivy.json \
-            "${{ steps.ref.outputs.image }}"
+            --cache-dir /work/.trivycache --scanners vuln --pkg-types os \
+            --format json --output trivy.json "${{ steps.ref.outputs.image }}"
+
+      - name: Dependencies (Trivy, application libraries)
+        if: env.PASSPORT_STAGE_SCA == '1'
+        continue-on-error: true   # a broken scanner is reported on the run, not hidden here
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -e TRIVY_USERNAME -e TRIVY_PASSWORD \
+            -v "$PWD:/work" -w /work "$TRIVY_IMAGE" image \
+            --cache-dir /work/.trivycache --scanners vuln --pkg-types library \
+            --format json --output trivy-sca.json "${{ steps.ref.outputs.image }}"
 
       - name: Secret detection (Gitleaks)
         if: env.PASSPORT_STAGE_SECRETS == '1'
@@ -83,6 +96,7 @@ jobs:
       - name: Request release passport
         run: |
           python3 passport.py permit --image "${{ steps.ref.outputs.image }}" --report trivy.json \
+            --stage-report sca=trivy-sca.json \
             --stage-report secrets=gitleaks.json --stage-report sast=semgrep.json
 
       - name: Keep evidence
@@ -92,6 +106,7 @@ jobs:
           name: release-passport
           path: |
             trivy.json
+            trivy-sca.json
             gitleaks.json
             semgrep.json
             passport.jwt
