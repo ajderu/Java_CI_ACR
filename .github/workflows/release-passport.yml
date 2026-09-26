@@ -5,7 +5,7 @@ name: release-passport
 
 on:
   push:
-    branches: [master]   # runs on the default branch maintain the baseline (existing risk)
+    branches: [main]   # runs on the default branch maintain the baseline (existing risk)
   pull_request:             # pull requests are judged on the NEW risk they introduce
   workflow_dispatch:
 
@@ -16,9 +16,9 @@ permissions:
 
 env:
   PASSPORT_API: https://func-releaseguard-e2a10c.azurewebsites.net
-  PASSPORT_PROJECT: prj_a86b0eed8cf4
+  PASSPORT_PROJECT: prj_b73b6f1171c3
   PASSPORT_AUDIENCE: release-passport
-  PASSPORT_CLI_URL: https://gray-plant-02e2e3803.1.azurestaticapps.net/cli/passport.py
+  PASSPORT_CLI_URL: https://proud-beach-0d61b8503.1.azurestaticapps.net/cli/passport.py
   TRIVY_IMAGE: aquasec/trivy:0.58.1   # pin, and bump deliberately
 
 jobs:
@@ -61,10 +61,30 @@ jobs:
             --cache-dir /work/.trivycache --scanners vuln --format json --output trivy.json \
             "${{ steps.ref.outputs.image }}"
 
-      - name: Request release passport
+      - name: Which checks are enabled (the dashboard decides, not this file)
+        id: stages
         run: |
           curl -fsSL "$PASSPORT_CLI_URL" -o passport.py
-          python3 passport.py permit --image "${{ steps.ref.outputs.image }}" --report trivy.json
+          python3 passport.py stages >> "$GITHUB_ENV"
+
+      - name: Secret detection (Gitleaks)
+        if: env.PASSPORT_STAGE_SECRETS == '1'
+        continue-on-error: true
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/repo" -w /repo \
+            zricethezav/gitleaks:v8.21.2 detect --source . --report-format json --report-path gitleaks.json --no-banner --exit-code 0
+
+      - name: Code analysis (Semgrep)
+        if: env.PASSPORT_STAGE_SAST == '1'
+        continue-on-error: true
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/src" -w /src \
+            semgrep/semgrep:1.97.0 semgrep scan --config auto --json --output semgrep.json --quiet --metrics=off
+
+      - name: Request release passport
+        run: |
+          python3 passport.py permit --image "${{ steps.ref.outputs.image }}" --report trivy.json \
+            --stage-report secrets=gitleaks.json --stage-report sast=semgrep.json
 
       - name: Keep evidence
         if: always()
@@ -73,6 +93,8 @@ jobs:
           name: release-passport
           path: |
             trivy.json
+            gitleaks.json
+            semgrep.json
             passport.jwt
           if-no-files-found: ignore
 
