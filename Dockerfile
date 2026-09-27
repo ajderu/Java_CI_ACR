@@ -8,7 +8,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app/main
 
 # The stage at which the application is deployed
-FROM --platform=linux/amd64 alpine:3.16
+FROM --platform=linux/amd64 alpine:3.24
 COPY --from=builder /app/main /app/main
 EXPOSE 8080
 ENTRYPOINT ["/app/main"]
