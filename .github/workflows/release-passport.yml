@@ -5,7 +5,7 @@ name: release-passport
 
 on:
   push:
-    branches: [main]   # runs on the default branch maintain the baseline (existing risk)
+    branches: [master]   # runs on the default branch maintain the baseline (existing risk)
   pull_request:             # pull requests are judged on the NEW risk they introduce
   workflow_dispatch:
 
