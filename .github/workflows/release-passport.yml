@@ -5,7 +5,7 @@ name: release-passport
 
 on:
   push:
-    branches: [master]   # runs on the default branch maintain the baseline (existing risk)
+    branches: [main]   # runs on the default branch maintain the baseline (existing risk)
   pull_request:             # pull requests are judged on the NEW risk they introduce
   workflow_dispatch:
 
@@ -16,9 +16,9 @@ permissions:
 
 env:
   PASSPORT_API: https://func-releaseguard-e2a10c.azurewebsites.net
-  PASSPORT_PROJECT: prj_b73b6f1171c3
+  PASSPORT_PROJECT: prj_e144a33543b8
   PASSPORT_AUDIENCE: release-passport
-  PASSPORT_CLI_URL: https://proud-beach-0d61b8503.1.azurestaticapps.net/cli/passport.py
+  PASSPORT_CLI_URL: https://red-mud-0bce62303.5.azurestaticapps.net/cli/passport.py
   TRIVY_IMAGE: aquasec/trivy:0.58.1   # pin, and bump deliberately
 
 jobs:
