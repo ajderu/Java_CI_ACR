@@ -1,5 +1,6 @@
 # The stage at which the application is built
 FROM --platform=linux/amd64 golang:1.19-alpine AS builder
+USER root
 RUN apk update && apk add --no-cache git
 WORKDIR /app
 COPY go.mod go.sum ./
